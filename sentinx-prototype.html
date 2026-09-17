@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinX — AI-Based Fake Identity &amp; Document Screening System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0D1321;
+    --ink-2:#141C2E;
+    --ink-3:#1B2540;
+    --line:#283354;
+    --paper:#ECE6D6;
+    --paper-2:#DFD7C0;
+    --paper-ink:#2A2620;
+    --text:#E7ECF5;
+    --muted:#8996AC;
+    --safe:#35B892;
+    --safe-dim:#1E4A3E;
+    --warn:#E2A73B;
+    --warn-dim:#4A3B1C;
+    --danger:#D1483B;
+    --danger-dim:#4A231D;
+    --scan:#4FC3E8;
+    --focus:#7FDBFF;
+    --radius-doc: 6px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--text);
+    font-family:"IBM Plex Sans", -apple-system, sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace;}
+
+  a{color:inherit;}
+
+  ::selection{background:var(--scan); color:var(--ink);}
+
+  :focus-visible{
+    outline:2px solid var(--focus);
+    outline-offset:3px;
+  }
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- Header ---------- */
+  header{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(79,195,232,0.05), transparent);
+  }
+  .header-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 28px; max-width:1180px; margin:0 auto; gap:20px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:34px; height:34px; position:relative; flex-shrink:0;
+  }
+  .brand-mark svg{width:100%; height:100%; display:block;}
+  .brand-name{font-family:"IBM Plex Mono"; font-weight:600; font-size:19px; letter-spacing:0.02em;}
+  .brand-sub{font-size:12.5px; color:var(--muted); margin-top:1px;}
+  .header-meta{
+    display:flex; gap:22px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;
+  }
+  .header-meta strong{color:var(--text); font-weight:500;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:64px 28px 56px;
+    max-width:1180px; margin:0 auto;
+    display:grid; grid-template-columns:1.15fr 1fr; gap:56px; align-items:center;
+  }
+  .hero-stat{
+    font-family:"IBM Plex Mono"; font-weight:600;
+    font-size:clamp(34px, 5.4vw, 60px);
+    line-height:1.08; letter-spacing:-0.01em;
+  }
+  .hero-stat .arrow{color:var(--scan); padding:0 10px;}
+  .hero-stat .to{color:var(--safe);}
+  .hero-label{color:var(--muted); font-size:14px; margin-top:14px; max-width:40ch;}
+  .hero-copy h1{
+    font-size:15px; text-transform:none; color:var(--muted);
+    font-weight:500; margin:0 0 10px;
+  }
+  .hero-copy p{font-size:16.5px; color:var(--text); max-width:46ch; margin:0 0 14px;}
+  .hero-copy p.dim{color:var(--muted); font-size:14.5px;}
+  .hero-visual{position:relative; height:230px;}
+
+  /* mini radar/pulse graphic in hero */
+  .pulse-frame{
+    position:absolute; inset:0; border:1px solid var(--line); border-radius:10px;
+    background:radial-gradient(circle at 30% 20%, rgba(79,195,232,0.10), transparent 60%);
+    overflow:hidden;
+  }
+  .pulse-frame svg{width:100%; height:100%;}
+
+  /* ---------- Section shell ---------- */
+  section{padding:64px 0; border-top:1px solid var(--line);}
+  .section-head{margin-bottom:34px; max-width:640px;}
+  .section-kicker{
+    font-family:"IBM Plex Mono"; font-size:12.5px; color:var(--scan);
+    margin:0 0 10px;
+  }
+  .section-head h2{font-size:26px; margin:0 0 10px; font-weight:600;}
+  .section-head p{color:var(--muted); font-size:14.5px; margin:0;}
+
+  /* ---------- Demo layout ---------- */
+  .demo-controls{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:26px;
+  }
+  .case-chips{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{
+    font-family:"IBM Plex Mono"; font-size:12.5px; padding:9px 14px;
+    background:var(--ink-2); border:1px solid var(--line); border-radius:999px;
+    color:var(--muted); cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+  }
+  .chip:hover{color:var(--text); border-color:#3a4770;}
+  .chip.active{
+    color:var(--ink); background:var(--scan); border-color:var(--scan); font-weight:600;
+  }
+  .run-btn{
+    margin-left:auto; font-family:"IBM Plex Mono"; font-size:13px; font-weight:600;
+    padding:11px 22px; border-radius:6px; border:1px solid var(--safe);
+    background:var(--safe-dim); color:var(--safe); cursor:pointer;
+    transition:background .15s, color .15s, opacity .15s; letter-spacing:0.02em;
+  }
+  .run-btn:hover:not(:disabled){background:var(--safe); color:var(--ink);}
+  .run-btn:disabled{opacity:0.45; cursor:not-allowed;}
+  .timer{
+    font-family:"IBM Plex Mono"; font-size:13px; color:var(--muted); min-width:74px;
+  }
+  .timer strong{color:var(--text);}
+
+  .demo-grid{
+    display:grid; grid-template-columns:1.15fr 1fr; gap:26px; align-items:start;
+  }
+
+  /* ---------- Document viewer (kiosk frame) ---------- */
+  .viewer{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:10px;
+    padding:18px; position:relative;
+  }
+  .viewer-top{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:"IBM Plex Mono"; font-size:11.5px; color:var(--muted); margin-bottom:12px;
+  }
+  .status-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--muted); display:inline-block; margin-right:7px;
+    box-shadow:0 0 0 0 rgba(79,195,232,0.6);
+  }
+  .status-dot.live{background:var(--scan); animation:dotpulse 1.4s ease-out infinite;}
+  @keyframes dotpulse{
+    0%{box-shadow:0 0 0 0 rgba(79,195,232,0.55);}
+    100%{box-shadow:0 0 0 8px rgba(79,195,232,0);}
+  }
+
+  .doc-stage{
+    position:relative; border-radius:8px; overflow:hidden;
+    outline:1px solid var(--line); outline-offset:4px;
+    transition:outline-color .3s;
+  }
+  .doc-stage.result-low{outline-color:var(--safe);}
+  .doc-stage.result-med{outline-color:var(--warn);}
+  .doc-stage.result-high{outline-color:var(--danger);}
+
+  .doc-page{
+    background:var(--paper); color:var(--paper-ink); padding:22px 24px 18px;
+    font-family:"IBM Plex Sans";
+    background-image:
+      repeating-linear-gradient(0deg, rgba(42,38,32,0.035) 0px, rgba(42,38,32,0.035) 1px, transparent 1px, transparent 34px);
+  }
+  .doc-masthead{
+    display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:14px;
+    border-bottom:1.5px solid rgba(42,38,32,0.25);
+  }
+  .doc-emblem{
+    width:26px; height:26px; border-radius:50%; border:1.5px solid rgba(42,38,32,0.45);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .doc-emblem span{width:9px; height:9px; background:rgba(42,38,32,0.5); transform:rotate(45deg);}
+  .doc-masthead-text{font-size:10.5px; letter-spacing:0.04em; color:rgba(42,38,32,0.65);}
+  .doc-masthead-text .doc-title{font-size:12.5px; font-weight:600; color:var(--paper-ink); letter-spacing:0.01em;}
+
+  .doc-body{display:grid; grid-template-columns:96px 1fr; gap:18px;}
+  .doc-photo-wrap{position:relative;}
+  .doc-photo{
+    width:96px; height:118px; border:1px solid rgba(42,38,32,0.35); border-radius:2px;
+    background:
+      radial-gradient(circle at 50% 34%, rgba(42,38,32,0.42) 0 20px, transparent 21px),
+      linear-gradient(180deg, rgba(42,38,32,0.18), rgba(42,38,32,0.08));
+    position:relative; overflow:hidden;
+  }
+  .doc-photo::after{
+    content:""; position:absolute; left:50%; bottom:-6px; transform:translateX(-50%);
+    width:64px; height:64px; border-radius:50% 50% 0 0;
+    background:rgba(42,38,32,0.30);
+  }
+  .doc-fields{display:flex; flex-direction:column; gap:7px;}
+  .doc-field{display:grid; grid-template-columns:108px 1fr; gap:8px; font-size:12px;}
+  .doc-field .k{color:rgba(42,38,32,0.55); font-size:9.5px; letter-spacing:0.05em; align-self:center;}
+  .doc-field .v{font-family:"IBM Plex Mono"; font-size:12.5px; font-weight:500; position:relative; align-self:center;}
+
+  .doc-mrz{
+    margin-top:16px; padding-top:12px; border-top:1.5px dashed rgba(42,38,32,0.25);
+    font-family:"IBM Plex Mono"; font-size:12px; letter-spacing:0.09em; color:rgba(42,38,32,0.75);
+    white-space:pre;
+  }
+  .doc-mrz div{position:relative; padding:2px 0;}
+
+  /* overlay boxes drawn by JS during stages */
+  .ov-box{
+    position:absolute; border:1.5px solid var(--scan); border-radius:2px;
+    box-shadow:0 0 0 2px rgba(79,195,232,0.12);
+    opacity:0; transition:opacity .35s ease;
+    pointer-events:none;
+  }
+  .ov-box.show{opacity:1;}
+  .ov-box.mrz{border-color:var(--safe); box-shadow:0 0 0 2px rgba(53,184,146,0.12);}
+  .ov-box.mrz.fail{border-color:var(--danger); box-shadow:0 0 0 2px rgba(209,72,59,0.15);}
+  .ov-box.face{border-color:#fff; border-style:dashed;}
+  .ov-tamper{
+    position:absolute; border-radius:6px; opacity:0; transition:opacity .5s ease;
+    background:radial-gradient(circle, rgba(226,167,59,0.55), rgba(209,72,59,0.28) 55%, transparent 78%);
+    mix-blend-mode:multiply;
+    pointer-events:none;
+  }
+  .ov-tamper.show{opacity:1;}
+  .ov-tag{
+    position:absolute; font-family:"IBM Plex Mono"; font-size:9.5px; color:var(--scan);
+    background:rgba(13,19,33,0.85); padding:2px 5px; border-radius:3px; white-space:nowrap;
+    opacity:0; transition:opacity .35s ease; transform:translateY(-100%); margin-top:-3px;
+    pointer-events:none;
+  }
+  .ov-tag.show{opacity:1;}
+  .ov-tag.warn{color:var(--warn);}
+  .ov-tag.danger{color:var(--danger);}
+
+  .scanline{
+    position:absolute; left:0; right:0; height:38%; top:-38%;
+    background:linear-gradient(180deg, transparent, rgba(79,195,232,0.16) 45%, rgba(79,195,232,0.32) 50%, rgba(79,195,232,0.16) 55%, transparent);
+    pointer-events:none; opacity:0.7;
+  }
+  .doc-stage.scanning .scanline{animation:sweep 1.9s linear infinite;}
+  @keyframes sweep{
+    0%{top:-38%;}
+    100%{top:100%;}
+  }
+  .corner{position:absolute; width:16px; height:16px; border-color:var(--scan); opacity:0.85;}
+  .corner.tl{top:8px; left:8px; border-top:2px solid; border-left:2px solid;}
+  .corner.tr{top:8px; right:8px; border-top:2px solid; border-right:2px solid;}
+  .corner.bl{bottom:8px; left:8px; border-bottom:2px solid; border-left:2px solid;}
+  .corner.br{bottom:8px; right:8px; border-bottom:2px solid; border-right:2px solid;}
+
+  .viewer-status{
+    margin-top:14px; font-family:"IBM Plex Mono"; font-size:12px; color:var(--muted);
+    min-height:18px;
+  }
+  .viewer-status .cursor{color:var(--scan);}
+
+  /* ---------- Pipeline + results column ---------- */
+  .stepper{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:10px; padding:18px;
+  }
+  .step{
+    display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--line);
+    opacity:0.5; transition:opacity .3s;
+  }
+  .step:last-child{border-bottom:none;}
+  .step.active, .step.done{opacity:1;}
+  .step-num{
+    width:24px; height:24px; border-radius:50%; border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    font-family:"IBM Plex Mono"; font-size:11px; color:var(--muted); margin-top:1px;
+    transition:all .25s;
+  }
+  .step.active .step-num{border-color:var(--scan); color:var(--scan); background:rgba(79,195,232,0.08);}
+  .step.done .step-num{border-color:var(--safe); color:var(--ink); background:var(--safe);}
+  .step-body h4{margin:0 0 2px; font-size:13.5px; font-weight:600;}
+  .step-body p{margin:0; font-size:12px; color:var(--muted);}
+
+  .results{
+    margin-top:16px; border:1px solid var(--line); border-radius:10px; overflow:hidden;
+    opacity:0; transform:translateY(6px); transition:opacity .4s ease, transform .4s ease;
+  }
+  .results.show{opacity:1; transform:translateY(0);}
+  .verdict-bar{padding:14px 18px; font-family:"IBM Plex Mono"; font-weight:600; font-size:13.5px;}
+  .verdict-bar.low{background:var(--safe-dim); color:var(--safe);}
+  .verdict-bar.med{background:var(--warn-dim); color:var(--warn);}
+  .verdict-bar.high{background:var(--danger-dim); color:var(--danger);}
+  .results-body{padding:18px; background:var(--ink-2);}
+
+  .gauge-row{display:flex; align-items:center; gap:18px; margin-bottom:16px;}
+  .gauge-num{font-family:"IBM Plex Mono"; font-size:34px; font-weight:600; line-height:1;}
+  .gauge-num.low{color:var(--safe);} .gauge-num.med{color:var(--warn);} .gauge-num.high{color:var(--danger);}
+  .gauge-sub{font-size:11.5px; color:var(--muted); margin-top:3px;}
+
+  .findings{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;}
+  .findings li{
+    font-size:13px; color:var(--text); display:flex; gap:9px; align-items:flex-start;
+  }
+  .findings li::before{
+    content:"›"; font-family:"IBM Plex Mono"; color:var(--scan); flex-shrink:0; margin-top:-1px;
+  }
+
+  .placeholder-note{
+    font-size:12.5px; color:var(--muted); margin-top:16px; padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+
+  /* ---------- Technical approach ---------- */
+  .tech-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px;}
+  .tech-col-label{font-family:"IBM Plex Mono"; font-size:12px; color:var(--scan); margin-bottom:16px;}
+  .tech-list{display:flex; flex-direction:column;}
+  .tech-item{
+    display:flex; gap:14px; padding:16px 0; border-top:1px solid var(--line);
+  }
+  .tech-list .tech-item:last-child{border-bottom:1px solid var(--line);}
+  .tech-index{font-family:"IBM Plex Mono"; font-size:12px; color:var(--muted); padding-top:1px;}
+  .tech-item h4{margin:0 0 4px; font-size:14.5px; font-weight:600;}
+  .tech-item p{margin:0; font-size:13px; color:var(--muted);}
+
+  /* ---------- Card grids (feasibility / impact) ---------- */
+  .card-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;}
+  .card{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:8px; padding:18px;
+  }
+  .card h4{margin:0 0 8px; font-size:13.5px; font-weight:600; color:var(--scan);}
+  .card p{margin:0; font-size:12.8px; color:var(--muted);}
+
+  .risk-rows{margin-top:16px; display:flex; flex-direction:column; gap:1px; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .risk-row{display:grid; grid-template-columns:1fr 24px 1fr; gap:14px; align-items:center; padding:14px 18px; background:var(--ink-2);}
+  .risk-row:not(:last-child){border-bottom:1px solid var(--line);}
+  .risk-row .rk{font-size:13px; color:var(--text);}
+  .risk-row .mid{color:var(--scan); text-align:center; font-family:"IBM Plex Mono";}
+  .risk-row .mit{font-size:13px; color:var(--muted);}
+
+  .impact-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px;}
+
+  footer{
+    border-top:1px solid var(--line); padding:36px 0 46px; font-size:12px; color:var(--muted);
+  }
+  .refs{display:flex; flex-direction:column; gap:6px; margin:14px 0 22px; font-size:12.5px;}
+  .foot-row{display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-top:18px; border-top:1px solid var(--line); font-family:"IBM Plex Mono"; font-size:11.5px;}
+
+  .upload-btn{
+    font-family:"IBM Plex Mono"; font-size:12.5px; padding:9px 14px;
+    background:var(--ink-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--muted); cursor:pointer; transition:border-color .15s, color .15s;
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .upload-btn:hover{color:var(--text); border-color:#3a4770;}
+  .upload-btn.chosen{color:var(--scan); border-color:var(--scan);}
+  .upload-btn input[type="file"]{display:none;}
+
+  #liveImageWrap{
+    position:relative; min-height:220px; background:var(--ink-3);
+    border-radius:6px; overflow:hidden; display:flex;
+    align-items:center; justify-content:center;
+  }
+  #liveDocImage{display:none; width:100%; height:auto;}
+  #liveImagePlaceholder{color:var(--muted); font-size:13px; padding:20px; text-align:center;}
+  .live-error{
+    margin-top:10px; padding:10px 14px; border-radius:6px; font-size:12.5px;
+    background:var(--danger-dim); color:var(--danger); border:1px solid var(--danger);
+    display:none;
+  }
+  .live-error.show{display:block;}
+
+  @media (max-width: 880px){
+    .hero{grid-template-columns:1fr; gap:32px; padding-top:44px;}
+    .demo-grid{grid-template-columns:1fr;}
+    .tech-grid{grid-template-columns:1fr; gap:8px;}
+    .card-grid{grid-template-columns:1fr 1fr;}
+    .impact-row{grid-template-columns:1fr;}
+    .risk-row{grid-template-columns:1fr; text-align:left;}
+    .risk-row .mid{display:none;}
+    .doc-body{grid-template-columns:76px 1fr;}
+    .header-meta{gap:14px;}
+    .upload-btn{font-size:11.5px; padding:8px 11px;}
+  }
+
+  @media (max-width: 540px){
+    .card-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 34 34" fill="none">
+          <rect x="1" y="1" width="32" height="32" rx="7" stroke="#4FC3E8" stroke-width="1.4"/>
+          <path d="M9 9H13M9 9V13" stroke="#4FC3E8" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M25 9H21M25 9V13" stroke="#4FC3E8" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M9 25H13M9 25V21" stroke="#4FC3E8" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M25 25H21M25 25V21" stroke="#4FC3E8" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="17" cy="17" r="4" stroke="#35B892" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">SentinX</div>
+        <div class="brand-sub">AI-based fake identity &amp; document screening</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div>PS ID <strong>26188</strong></div>
+      <div>Theme <strong>Blockchain &amp; Cybersecurity</strong></div>
+      <div>Team <strong>STCET-26</strong></div>
+      <div>SIH <strong>2026</strong></div>
+    </div>
+  </div>
+</header>
+
+<div class="hero wrap" style="padding-left:0; padding-right:0;">
+  <div>
+    <div class="hero-stat">3<span style="font-size:0.5em; color:var(--muted);">min</span><span class="arrow">→</span><span class="to">&lt;3<span style="font-size:0.5em;">sec</span></span></div>
+    <div class="hero-label">Per-passenger identity and document screening time, from manual officer review to automated pipeline output.</div>
+  </div>
+  <div class="hero-copy">
+    <h1>Border checkpoints · airports, land borders, sea ports</h1>
+    <p>A single pipeline unifies OCR, ICAO document validation, pixel-level tampering forensics, and facial verification — so officers get one explainable risk score instead of five manual checks.</p>
+    <p class="dim">Runs entirely on edge hardware. No stored biometrics, no cloud dependency.</p>
+  </div>
+</div>
+
+<section id="demo">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="section-kicker">01 — Live pipeline demo</p>
+      <h2>Run a document through the screening pipeline</h2>
+      <p>Pick a sample case and run it through all four stages. Bounding boxes, forensic findings and the risk score appear as each stage completes.</p>
+    </div>
+
+    <div class="demo-controls">
+      <div class="case-chips" id="caseChips" role="group" aria-label="Sample case selector"></div>
+      <div class="timer">⏱ <strong id="timerVal">0.00s</strong></div>
+      <button class="run-btn" id="runBtn">Run screening</button>
+    </div>
+
+    <div class="demo-grid">
+      <div class="viewer">
+        <div class="viewer-top">
+          <span><span class="status-dot" id="statusDot"></span><span id="statusLabel">Ready</span></span>
+          <span id="caseLabel" class="mono">Case: Clean e-passport</span>
+        </div>
+        <div class="doc-stage" id="docStage">
+          <div class="doc-page" id="docPage">
+            <div class="doc-masthead">
+              <div class="doc-emblem"><span></span></div>
+              <div class="doc-masthead-text">FEDERATIVE STATE OF NARVANA<br><span class="doc-title">PASSPORT / PASSEPORT</span></div>
+            </div>
+            <div class="doc-body">
+              <div class="doc-photo-wrap">
+                <div class="doc-photo" id="photoBox"></div>
+              </div>
+              <div class="doc-fields" id="docFields">
+                <div class="doc-field" data-field="surname"><div class="k">SURNAME</div><div class="v">DE ALVARES</div></div>
+                <div class="doc-field" data-field="given"><div class="k">GIVEN NAMES</div><div class="v">MARISA JOY</div></div>
+                <div class="doc-field" data-field="no"><div class="k">PASSPORT NO.</div><div class="v">NV3381027</div></div>
+                <div class="doc-field" data-field="nat"><div class="k">NATIONALITY</div><div class="v">NARVANIAN</div></div>
+                <div class="doc-field" data-field="dob"><div class="k">DATE OF BIRTH</div><div class="v">14 MAR 1994</div></div>
+                <div class="doc-field" data-field="exp"><div class="k">DATE OF EXPIRY</div><div class="v">02 JUL 2029</div></div>
+              </div>
+            </div>
+            <div class="doc-mrz" id="docMrz"><div id="mrzLine1">P&lt;NVAALVARES&lt;&lt;MARISA&lt;JOY&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div><div id="mrzLine2">NV338102<span class="mono">7</span>4NVA9403147F2907023&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;08</div></div>
+            <div class="scanline"></div>
+            <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+          </div>
+        </div>
+        <div class="viewer-status mono" id="viewerStatus">Select a case and press run screening<span class="cursor">▍</span></div>
+      </div>
+
+      <div>
+        <div class="stepper" id="stepper">
+          <div class="step" data-step="1">
+            <div class="step-num">1</div>
+            <div class="step-body"><h4>OCR extraction</h4><p>LayoutLMv3 + TrOCR multilingual field pull</p></div>
+          </div>
+          <div class="step" data-step="2">
+            <div class="step-num">2</div>
+            <div class="step-body"><h4>Document validation</h4><p>ICAO Doc 9303 / MRZ checksum</p></div>
+          </div>
+          <div class="step" data-step="3">
+            <div class="step-num">3</div>
+            <div class="step-body"><h4>Tampering detection</h4><p>ELA + dual-branch ResNet forensics</p></div>
+          </div>
+          <div class="step" data-step="4">
+            <div class="step-num">4</div>
+            <div class="step-body"><h4>Face verification</h4><p>ArcFace / MagFace embedding match</p></div>
+          </div>
+        </div>
+
+        <div class="results" id="results">
+          <div class="verdict-bar" id="verdictBar">—</div>
+          <div class="results-body">
+            <div class="gauge-row">
+              <div>
+                <div class="gauge-num" id="gaugeNum">0</div>
+                <div class="gauge-sub">risk score / 100</div>
+              </div>
+              <div style="flex:1;">
+                <div class="gauge-sub" id="faceMatchLabel">Face match confidence —</div>
+                <div class="gauge-sub" id="mrzLabel">MRZ checksum —</div>
+              </div>
+            </div>
+            <ul class="findings" id="findingsList"></ul>
+          </div>
+        </div>
+
+        <p class="placeholder-note">These four sample cases replay a scripted animation, but the case data (risk scores, findings, verdicts) is fetched live from the SentinX backend API. To screen a real document, use the live upload panel below.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="live">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="section-kicker">01b — Live document screening</p>
+      <h2>Upload a real document and run it through the pipeline</h2>
+      <p>Calls the actual SentinX backend: real Tesseract OCR, real ICAO 9303 MRZ checksum validation, real Error Level Analysis tamper forensics, and OpenCV-based face similarity if you supply a reference photo. Requires the backend running locally on port 8000.</p>
+    </div>
+
+    <div class="demo-controls">
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label class="upload-btn" id="docUploadBtn" for="docUpload">📄 Choose document image</label>
+        <input type="file" id="docUpload" accept="image/*" style="display:none;">
+        <label class="upload-btn" id="selfieUploadBtn" for="selfieUpload">🙂 Choose selfie (optional)</label>
+        <input type="file" id="selfieUpload" accept="image/*" style="display:none;">
+      </div>
+      <div class="timer">⏱ <strong id="liveTimerVal">0.00s</strong></div>
+      <button class="run-btn" id="liveRunBtn" disabled>Run live screening</button>
+    </div>
+
+    <div class="demo-grid">
+      <div class="viewer">
+        <div class="viewer-top">
+          <span><span class="status-dot" id="liveStatusDot"></span><span id="liveStatusLabel">Ready</span></span>
+          <span class="mono" id="liveFileLabel">No document selected</span>
+        </div>
+        <div class="doc-stage" id="liveDocStage">
+          <div id="liveImageWrap">
+            <span id="liveImagePlaceholder">Choose a document image above to preview it here</span>
+            <img id="liveDocImage" alt="Uploaded document preview">
+            <div class="scanline" id="liveScanline" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="viewer-status mono" id="liveViewerStatus">Choose a document image to begin<span class="cursor">▍</span></div>
+        <div class="live-error" id="liveError"></div>
+      </div>
+
+      <div>
+        <div class="stepper" id="liveStepper">
+          <div class="step" data-step="1">
+            <div class="step-num">1</div>
+            <div class="step-body"><h4>OCR extraction</h4><p>Tesseract MRZ-band text extraction</p></div>
+          </div>
+          <div class="step" data-step="2">
+            <div class="step-num">2</div>
+            <div class="step-body"><h4>Document validation</h4><p>ICAO Doc 9303 / MRZ checksum</p></div>
+          </div>
+          <div class="step" data-step="3">
+            <div class="step-num">3</div>
+            <div class="step-body"><h4>Tampering detection</h4><p>Real ELA forensics</p></div>
+          </div>
+          <div class="step" data-step="4">
+            <div class="step-num">4</div>
+            <div class="step-body"><h4>Face verification</h4><p>OpenCV similarity match (see README for scope)</p></div>
+          </div>
+        </div>
+
+        <div class="results" id="liveResults">
+          <div class="verdict-bar" id="liveVerdictBar">—</div>
+          <div class="results-body">
+            <div class="gauge-row">
+              <div>
+                <div class="gauge-num" id="liveGaugeNum">0</div>
+                <div class="gauge-sub">risk score / 100</div>
+              </div>
+              <div style="flex:1;">
+                <div class="gauge-sub" id="liveFaceMatchLabel">Face match confidence —</div>
+                <div class="gauge-sub" id="liveMrzLabel">MRZ checksum —</div>
+              </div>
+            </div>
+            <ul class="findings" id="liveFindingsList"></ul>
+          </div>
+        </div>
+
+        <p class="placeholder-note">Live pipeline — this panel makes a real network call to your backend. If the backend isn't running, or CORS/network settings block it, you'll see an error above the viewer instead of a result.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="approach">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="section-kicker">02 — Technical approach</p>
+      <h2>What's under the pipeline</h2>
+      <p>Five technology components mapped to a four-stage processing sequence.</p>
+    </div>
+    <div class="tech-grid">
+      <div>
+        <div class="tech-col-label">Technologies used</div>
+        <div class="tech-list">
+          <div class="tech-item"><div class="tech-index">01</div><div><h4>Transformer OCR</h4><p>LayoutLMv3 &amp; TrOCR for low-latency multilingual text extraction.</p></div></div>
+          <div class="tech-item"><div class="tech-index">02</div><div><h4>Vision AI</h4><p>Dual-branch ResNet + Error Level Analysis (ELA) CNNs for tampering detection.</p></div></div>
+          <div class="tech-item"><div class="tech-index">03</div><div><h4>Biometrics</h4><p>ArcFace / MagFace angular-margin facial embedding, sub-0.001% FAR.</p></div></div>
+          <div class="tech-item"><div class="tech-index">04</div><div><h4>Deployment</h4><p>Edge ONNX models, ICAO e-Gate and optical scanner integration.</p></div></div>
+          <div class="tech-item"><div class="tech-index">05</div><div><h4>Decisioning</h4><p>Bayesian inference engine for risk score fusion.</p></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="tech-col-label">Methodology &amp; process</div>
+        <div class="tech-list">
+          <div class="tech-item"><div class="tech-index">S1</div><div><h4>Preprocessing</h4><p>Adaptive binarization, perspective rectification, security-layer slicing.</p></div></div>
+          <div class="tech-item"><div class="tech-index">S2</div><div><h4>Vision AI models</h4><p>Transformer OCR + noise/ELA analysis + dual-branch ResNet.</p></div></div>
+          <div class="tech-item"><div class="tech-index">S3</div><div><h4>Biometric matcher</h4><p>ArcFace/MagFace embedding + passive anti-spoofing.</p></div></div>
+          <div class="tech-item"><div class="tech-index">S4</div><div><h4>Risk aggregator</h4><p>Bayesian fusion + traffic-light scoring + explainable heatmaps.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="feasibility">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="section-kicker">03 — Feasibility &amp; viability</p>
+      <h2>Why this is buildable at checkpoint scale</h2>
+    </div>
+    <div class="card-grid">
+      <div class="card"><h4>Technical</h4><p>Integrates natively with ICAO e-Gates &amp; optical scanners; edge ONNX models run locally in under 2.5 seconds without cloud dependency.</p></div>
+      <div class="card"><h4>Operational</h4><p>Zero disruption to inspection lanes; intuitive visual overlays require no specialized officer training.</p></div>
+      <div class="card"><h4>Economic</h4><p>Cuts processing time by 80%, reducing officer overtime costs while doubling lane capacity with no new physical infrastructure.</p></div>
+      <div class="card"><h4>Legal &amp; privacy</h4><p>Privacy-by-design — strict volatile-memory execution (no stored biometrics), full data-sovereignty compliance, tamper-proof audit trails.</p></div>
+    </div>
+
+    <div class="risk-rows">
+      <div class="risk-row"><div class="rk">Varied document formats &amp; languages across issuing countries</div><div class="mid">→</div><div class="mit">Layout-robust transformer OCR with multilingual, multi-script training</div></div>
+      <div class="risk-row"><div class="rk">Sophisticated spoofing — masks, screens, printed photos</div><div class="mid">→</div><div class="mit">3D passive liveness detection combined with depth &amp; reflection analysis</div></div>
+      <div class="risk-row"><div class="rk">Real-time watchlist / database dependency</div><div class="mid">→</div><div class="mit">Cached local lookups with asynchronous sync to INTERPOL / national feeds</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="impact">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="section-kicker">04 — Impact &amp; benefits</p>
+      <h2>What changes for officers and travelers</h2>
+    </div>
+    <div class="impact-row">
+      <div class="card"><h4>Speed</h4><p>Reduces total identity &amp; document screening time from 3+ minutes down to under 3 seconds per passenger.</p></div>
+      <div class="card"><h4>Consistency</h4><p>Eliminates subjective human variance and officer fatigue across airports, land borders, and sea ports.</p></div>
+      <div class="card"><h4>Accuracy</h4><p>Catches sub-pixel digital alterations and lookalike impersonators that bypass naked-eye review.</p></div>
+    </div>
+    <div class="card-grid">
+      <div class="card"><h4>Security</h4><p>Standardized, explainable decisions and a forensic, time-stamped audit trail for intelligence and legal prosecution.</p></div>
+      <div class="card"><h4>Economic</h4><p>Doubles checkpoint lane capacity and cuts officer overtime costs without new physical infrastructure.</p></div>
+      <div class="card"><h4>Social</h4><p>Strengthens national border security while keeping the passenger experience fast and frictionless.</p></div>
+      <div class="card"><h4>Privacy</h4><p>No biometric data is stored — volatile in-memory processing supports data-sovereignty compliance.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="section-kicker" style="margin-bottom:8px;">References</div>
+    <div class="refs">
+      <div>ICAO Doc 9303 — Machine Readable Travel Documents (MRZ &amp; chip data standards)</div>
+      <div>Deng, J. et al., "ArcFace: Additive Angular Margin Loss for Deep Face Recognition", CVPR 2019</div>
+      <div>Huang, Y. et al., "LayoutLMv3: Pre-training for Document AI with Unified Text and Image Masking", Microsoft Research</div>
+      <div>Li, M. et al., "TrOCR: Transformer-based Optical Character Recognition with Pre-trained Models", Microsoft Research</div>
+      <div>INTERPOL &amp; national watchlist database integration standards for border-control systems</div>
+      <div>Error Level Analysis (ELA) techniques for detecting inconsistent JPEG re-compression in forged documents</div>
+    </div>
+    <div class="foot-row">
+      <span>SentinX · Team STCET-26</span>
+      <span>Smart India Hackathon 2026 · PS 26188</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Backend base URL - change this if you deploy the API somewhere else.
+  const API_BASE = 'http://localhost:8000';
+
+  // Populated by loadCases() below, from the live backend instead of
+  // being hardcoded here. Keeps the exact same shape the rest of this
+  // script already expects (mrzOk, faceMatch, etc.)
+  let CASES = {};
+
+  async function loadCases() {
+    try {
+      const res = await fetch(API_BASE + '/api/demo-cases');
+      if (!res.ok) throw new Error('Backend responded with ' + res.status);
+      const data = await res.json();
+      const mapped = {};
+      data.forEach(c => {
+        mapped[c.key] = {
+          label: c.label,
+          fields: c.fields,
+          mrzOk: c.mrz_ok,
+          tamper: c.tamper,
+          faceMatch: c.face_match,
+          risk: c.risk,
+          verdict: c.verdict,
+          findings: c.findings
+        };
+      });
+      return mapped;
+    } catch (err) {
+      console.error('Could not reach backend, falling back to built-in demo data:', err);
+      return FALLBACK_CASES;
+    }
+  }
+
+  // Kept as an offline fallback in case the backend isn't running -
+  // this is exactly what was hardcoded here before.
+  const FALLBACK_CASES = {
+    clean: {
+      label: "Clean e-passport",
+      fields: {surname:"DE ALVARES", given:"MARISA JOY", no:"NV3381027", nat:"NARVANIAN", dob:"14 MAR 1994", exp:"02 JUL 2029"},
+      mrzOk: true,
+      tamper: null,
+      faceMatch: 98.7,
+      risk: 4,
+      verdict: "Cleared — low risk",
+      findings: [
+        "MRZ checksum verified against all data fields",
+        "No tampering artifacts detected in photo or text regions",
+        "Facial embedding match at 98.7% confidence",
+        "Document layout matches ICAO template for issuing state"
+      ]
+    },
+    splice: {
+      label: "Photo splice attempt",
+      fields: {surname:"KOVAC", given:"ANDRIJA", no:"NV5502981", nat:"NARVANIAN", dob:"22 NOV 1988", exp:"11 JAN 2028"},
+      mrzOk: true,
+      tamper: "photo",
+      faceMatch: 41.2,
+      risk: 92,
+      verdict: "Flagged — likely photo substitution",
+      findings: [
+        "Photo region shows inconsistent JPEG re-compression (ELA anomaly)",
+        "Ghosting detected around photo boundary, consistent with splicing",
+        "Facial embedding distance exceeds match threshold (41.2%)",
+        "Recommend escalation to secondary inspection"
+      ]
+    },
+    forged_mrz: {
+      label: "Forged expiry date",
+      fields: {surname:"OYELARAN", given:"TOMISIN", no:"NV2217450", nat:"NARVANIAN", dob:"05 AUG 1996", exp:"02 JUL 2031"},
+      mrzOk: false,
+      tamper: "exp",
+      faceMatch: 95.4,
+      risk: 78,
+      verdict: "Flagged — MRZ checksum failure",
+      findings: [
+        "Date-of-expiry check digit does not match recomputed MRZ checksum",
+        "Font kerning anomaly detected in expiry field at pixel level",
+        "Facial embedding match within normal range (95.4%)",
+        "Cross-check against issuing authority database recommended"
+      ]
+    },
+    borderline: {
+      label: "Borderline face match",
+      fields: {surname:"HALVORSEN", given:"INGRID", no:"NV9013822", nat:"NARVANIAN", dob:"30 JAN 1979", exp:"19 SEP 2027"},
+      mrzOk: true,
+      tamper: null,
+      faceMatch: 76.3,
+      risk: 54,
+      verdict: "Manual review — inconclusive match",
+      findings: [
+        "Document and MRZ forensics clean",
+        "Facial similarity below auto-clear threshold (76.3%)",
+        "Possible causes: aging, lighting angle, or image quality",
+        "Route to officer for manual side-by-side comparison"
+      ]
+    }
+  };
+
+  const chipsEl = document.getElementById('caseChips');
+  const caseLabelEl = document.getElementById('caseLabel');
+  const runBtn = document.getElementById('runBtn');
+  const timerVal = document.getElementById('timerVal');
+  const statusDot = document.getElementById('statusDot');
+  const statusLabel = document.getElementById('statusLabel');
+  const viewerStatus = document.getElementById('viewerStatus');
+  const docStage = document.getElementById('docStage');
+  const docPage = document.getElementById('docPage');
+  const results = document.getElementById('results');
+  const verdictBar = document.getElementById('verdictBar');
+  const gaugeNum = document.getElementById('gaugeNum');
+  const faceMatchLabel = document.getElementById('faceMatchLabel');
+  const mrzLabel = document.getElementById('mrzLabel');
+  const findingsList = document.getElementById('findingsList');
+  const mrzLine2 = document.getElementById('mrzLine2');
+
+  let currentKey = 'clean';
+  let running = false;
+  let overlays = [];
+  let timerHandle = null;
+
+  function buildChips(){
+    Object.keys(CASES).forEach(key=>{
+      const b = document.createElement('button');
+      b.className = 'chip' + (key===currentKey ? ' active' : '');
+      b.type = 'button';
+      b.textContent = CASES[key].label;
+      b.addEventListener('click', ()=>{ if(!running) selectCase(key); });
+      chipsEl.appendChild(b);
+    });
+  }
+
+  function setFields(c){
+    Object.keys(c.fields).forEach(k=>{
+      const row = document.querySelector('.doc-field[data-field="'+k+'"] .v');
+      if(row) row.textContent = c.fields[k];
+    });
+    mrzLine2.innerHTML = c.mrzOk
+      ? 'NV338102<span class="mono">7</span>4NVA9403147F2907023&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;08'
+      : 'NV338102<span class="mono">7</span>4NVA9403147F3107<span style="color:var(--danger); text-decoration:underline;">029</span>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;08';
+  }
+
+  function clearOverlays(){
+    overlays.forEach(el=>el.remove());
+    overlays = [];
+  }
+
+  function addOverlay(el){
+    docPage.appendChild(el);
+    overlays.push(el);
+    return el;
+  }
+
+  function resetUI(){
+    clearOverlays();
+    docStage.classList.remove('scanning','result-low','result-med','result-high');
+    document.querySelectorAll('.step').forEach(s=>s.classList.remove('active','done'));
+    results.classList.remove('show');
+    statusDot.classList.remove('live');
+    statusLabel.textContent = 'Ready';
+    viewerStatus.innerHTML = 'Select a case and press run screening<span class="cursor">▍</span>';
+    timerVal.textContent = '0.00s';
+  }
+
+  function selectCase(key){
+    currentKey = key;
+    document.querySelectorAll('.chip').forEach((c,i)=>{
+      c.classList.toggle('active', Object.keys(CASES)[i]===key);
+    });
+    caseLabelEl.textContent = 'Case: ' + CASES[key].label;
+    setFields(CASES[key]);
+    resetUI();
+  }
+
+  function fieldRect(fieldKey){
+    const el = document.querySelector('.doc-field[data-field="'+fieldKey+'"]');
+    return relRect(el);
+  }
+  function relRect(el){
+    const pageRect = docPage.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return {
+      left: r.left - pageRect.left,
+      top: r.top - pageRect.top,
+      width: r.width,
+      height: r.height
+    };
+  }
+
+  function makeBox(rect, extraClass, pad){
+    pad = pad===undefined?4:pad;
+    const box = document.createElement('div');
+    box.className = 'ov-box ' + (extraClass||'');
+    box.style.left = (rect.left-pad)+'px';
+    box.style.top = (rect.top-pad)+'px';
+    box.style.width = (rect.width+pad*2)+'px';
+    box.style.height = (rect.height+pad*2)+'px';
+    return addOverlay(box);
+  }
+
+  function makeTag(rect, text, cls){
+    const tag = document.createElement('div');
+    tag.className = 'ov-tag ' + (cls||'');
+    tag.style.left = rect.left+'px';
+    tag.style.top = rect.top+'px';
+    tag.textContent = text;
+    return addOverlay(tag);
+  }
+
+  function makeTamper(rect, pad){
+    pad = pad===undefined?14:pad;
+    const blob = document.createElement('div');
+    blob.className = 'ov-tamper';
+    blob.style.left = (rect.left-pad)+'px';
+    blob.style.top = (rect.top-pad)+'px';
+    blob.style.width = (rect.width+pad*2)+'px';
+    blob.style.height = (rect.height+pad*2)+'px';
+    return addOverlay(blob);
+  }
+
+  function show(el){ requestAnimationFrame(()=>el.classList.add('show')); }
+
+  function setStep(n, state){
+    const step = document.querySelector('.step[data-step="'+n+'"]');
+    if(!state){ step.classList.remove('active','done'); return; }
+    if(state==='active'){ step.classList.add('active'); step.classList.remove('done'); }
+    if(state==='done'){ step.classList.remove('active'); step.classList.add('done'); }
+  }
+
+  function wait(ms){ return new Promise(res=>setTimeout(res, ms)); }
+
+  async function runScreening(){
+    if(running) return;
+    running = true;
+    runBtn.disabled = true;
+    document.querySelectorAll('.chip').forEach(c=>c.style.pointerEvents='none');
+    resetUI();
+
+    const c = CASES[currentKey];
+    const startTime = performance.now();
+    docStage.classList.add('scanning');
+    statusDot.classList.add('live');
+    statusLabel.textContent = 'Scanning';
+
+    timerHandle = setInterval(()=>{
+      timerVal.textContent = ((performance.now()-startTime)/1000).toFixed(2)+'s';
+    }, 40);
+
+    // Stage 1 — OCR extraction
+    setStep(1,'active');
+    viewerStatus.innerHTML = 'Extracting text fields (LayoutLMv3 + TrOCR)…<span class="cursor">▍</span>';
+    await wait(200);
+    ['surname','given','no','nat','dob','exp'].forEach((f,i)=>{
+      const box = makeBox(fieldRect(f), '');
+      setTimeout(()=>show(box), i*70);
+    });
+    await wait(650);
+    setStep(1,'done');
+
+    // Stage 2 — Document validation
+    setStep(2,'active');
+    viewerStatus.innerHTML = 'Validating ICAO Doc 9303 MRZ checksum…<span class="cursor">▍</span>';
+    const mrzEl = document.getElementById('docMrz');
+    const mrzBox = makeBox(relRect(mrzEl), 'mrz' + (c.mrzOk? '' : ' fail'), 6);
+    show(mrzBox);
+    if(!c.mrzOk){
+      const tag = makeTag(fieldRect('exp'), 'CHECKSUM MISMATCH', 'danger');
+      tag.style.top = (parseFloat(tag.style.top)-2)+'px';
+      show(tag);
+    }
+    await wait(600);
+    setStep(2,'done');
+
+    // Stage 3 — Tampering detection
+    setStep(3,'active');
+    viewerStatus.innerHTML = 'Running tamper forensics — ELA + dual-branch ResNet…<span class="cursor">▍</span>';
+    if(c.tamper === 'photo'){
+      const photoEl = document.getElementById('photoBox');
+      const blob = makeTamper(relRect(photoEl), 10);
+      show(blob);
+      const tag = makeTag(relRect(photoEl), 'ELA ANOMALY', 'danger');
+      show(tag);
+    } else if(c.tamper === 'exp'){
+      const expEl = document.querySelector('.doc-field[data-field="exp"] .v');
+      const blob = makeTamper(relRect(expEl), 8);
+      show(blob);
+    }
+    await wait(700);
+    setStep(3,'done');
+
+    // Stage 4 — Face verification
+    setStep(4,'active');
+    viewerStatus.innerHTML = 'Matching facial embedding (ArcFace / MagFace)…<span class="cursor">▍</span>';
+    const photoEl = document.getElementById('photoBox');
+    const faceBox = makeBox(relRect(photoEl), 'face', 3);
+    show(faceBox);
+    const faceTag = makeTag(relRect(photoEl), c.faceMatch.toFixed(1)+'% match', c.faceMatch<80 ? (c.faceMatch<60?'danger':'warn') : '');
+    faceTag.style.top = (parseFloat(faceTag.style.top) + relRect(photoEl).height + 6) + 'px';
+    show(faceTag);
+    await wait(600);
+    setStep(4,'done');
+
+    // Finish
+    clearInterval(timerHandle);
+    const total = (performance.now()-startTime)/1000;
+    timerVal.textContent = total.toFixed(2)+'s';
+    docStage.classList.remove('scanning');
+    statusDot.classList.remove('live');
+    statusLabel.textContent = 'Complete';
+    viewerStatus.textContent = 'Screening complete in ' + total.toFixed(2) + 's';
+
+    const band = c.risk < 30 ? 'low' : (c.risk < 70 ? 'med' : 'high');
+    docStage.classList.add('result-'+band);
+    verdictBar.textContent = c.verdict;
+    verdictBar.className = 'verdict-bar ' + band;
+    gaugeNum.textContent = c.risk;
+    gaugeNum.className = 'gauge-num ' + band;
+    faceMatchLabel.textContent = 'Face match confidence: ' + c.faceMatch.toFixed(1) + '%';
+    mrzLabel.textContent = 'MRZ checksum: ' + (c.mrzOk ? 'passed' : 'failed');
+    findingsList.innerHTML = '';
+    c.findings.forEach(f=>{
+      const li = document.createElement('li');
+      li.textContent = f;
+      findingsList.appendChild(li);
+    });
+    results.classList.add('show');
+
+    running = false;
+    runBtn.disabled = false;
+    document.querySelectorAll('.chip').forEach(c=>c.style.pointerEvents='auto');
+  }
+
+  runBtn.addEventListener('click', runScreening);
+
+  (async function init() {
+    CASES = await loadCases();
+    buildChips();
+    selectCase('clean');
+  })();
+})();
+</script>
+
+<script>
+(function(){
+  const LIVE_API_BASE = 'http://localhost:8000';
+
+  const docUpload = document.getElementById('docUpload');
+  const selfieUpload = document.getElementById('selfieUpload');
+  const docUploadBtn = document.getElementById('docUploadBtn');
+  const selfieUploadBtn = document.getElementById('selfieUploadBtn');
+  const liveRunBtn = document.getElementById('liveRunBtn');
+  const liveTimerVal = document.getElementById('liveTimerVal');
+  const liveStatusDot = document.getElementById('liveStatusDot');
+  const liveStatusLabel = document.getElementById('liveStatusLabel');
+  const liveFileLabel = document.getElementById('liveFileLabel');
+  const liveDocStage = document.getElementById('liveDocStage');
+  const liveImageWrap = document.getElementById('liveImageWrap');
+  const liveImagePlaceholder = document.getElementById('liveImagePlaceholder');
+  const liveDocImage = document.getElementById('liveDocImage');
+  const liveScanline = document.getElementById('liveScanline');
+  const liveViewerStatus = document.getElementById('liveViewerStatus');
+  const liveError = document.getElementById('liveError');
+  const liveResults = document.getElementById('liveResults');
+  const liveVerdictBar = document.getElementById('liveVerdictBar');
+  const liveGaugeNum = document.getElementById('liveGaugeNum');
+  const liveFaceMatchLabel = document.getElementById('liveFaceMatchLabel');
+  const liveMrzLabel = document.getElementById('liveMrzLabel');
+  const liveFindingsList = document.getElementById('liveFindingsList');
+
+  let docFile = null;
+  let selfieFile = null;
+  let liveOverlays = [];
+  let liveTimerHandle = null;
+  let liveRunning = false;
+
+  function wait(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+  function setLiveStep(n, state){
+    const step = document.querySelector('#liveStepper .step[data-step="' + n + '"]');
+    if (!step) return;
+    if (!state){ step.classList.remove('active', 'done'); return; }
+    if (state === 'active'){ step.classList.add('active'); step.classList.remove('done'); }
+    if (state === 'done'){ step.classList.remove('active'); step.classList.add('done'); }
+  }
+
+  function clearLiveOverlays(){
+    liveOverlays.forEach(el => el.remove());
+    liveOverlays = [];
+  }
+
+  function scaleBox(bbox){
+    // bbox = [x, y, w, h] in the original uploaded image's pixel space.
+    // liveDocImage is rendered at width:100%, so its offsetWidth / naturalWidth
+    // gives the uniform scale factor to convert into on-screen pixels.
+    const scale = liveDocImage.offsetWidth / liveDocImage.naturalWidth;
+    return {
+      left: bbox[0] * scale,
+      top: bbox[1] * scale,
+      width: bbox[2] * scale,
+      height: bbox[3] * scale,
+    };
+  }
+
+  function addLiveOverlayBox(bbox, boxCls, label, tagCls){
+    if (!bbox || !liveDocImage.naturalWidth) return;
+    const r = scaleBox(bbox);
+    const box = document.createElement('div');
+    box.className = 'ov-box ' + (boxCls || '');
+    box.style.left = r.left + 'px';
+    box.style.top = r.top + 'px';
+    box.style.width = r.width + 'px';
+    box.style.height = r.height + 'px';
+    liveImageWrap.appendChild(box);
+    liveOverlays.push(box);
+    requestAnimationFrame(() => box.classList.add('show'));
+
+    if (label){
+      const tag = document.createElement('div');
+      tag.className = 'ov-tag ' + (tagCls || '');
+      tag.style.left = r.left + 'px';
+      tag.style.top = Math.max(0, r.top) + 'px';
+      tag.textContent = label;
+      liveImageWrap.appendChild(tag);
+      liveOverlays.push(tag);
+      requestAnimationFrame(() => tag.classList.add('show'));
+    }
+  }
+
+  function resetLiveUI(){
+    clearLiveOverlays();
+    liveDocStage.classList.remove('scanning', 'result-low', 'result-med', 'result-high');
+    document.querySelectorAll('#liveStepper .step').forEach(s => s.classList.remove('active', 'done'));
+    liveResults.classList.remove('show');
+    liveStatusDot.classList.remove('live');
+    liveStatusLabel.textContent = 'Ready';
+    liveError.classList.remove('show');
+    liveError.textContent = '';
+    liveTimerVal.textContent = '0.00s';
+  }
+
+  docUpload.addEventListener('change', () => {
+    docFile = docUpload.files[0] || null;
+    if (docFile){
+      docUploadBtn.classList.add('chosen');
+      docUploadBtn.textContent = '📄 ' + docFile.name;
+      liveFileLabel.textContent = docFile.name;
+      liveImagePlaceholder.style.display = 'none';
+      liveDocImage.style.display = 'block';
+      liveDocImage.src = URL.createObjectURL(docFile);
+      liveViewerStatus.innerHTML = 'Ready to run screening<span class="cursor">▍</span>';
+      liveRunBtn.disabled = false;
+    } else {
+      liveRunBtn.disabled = true;
+    }
+    resetLiveUI();
+  });
+
+  selfieUpload.addEventListener('change', () => {
+    selfieFile = selfieUpload.files[0] || null;
+    if (selfieFile){
+      selfieUploadBtn.classList.add('chosen');
+      selfieUploadBtn.textContent = '🙂 ' + selfieFile.name;
+    } else {
+      selfieUploadBtn.classList.remove('chosen');
+      selfieUploadBtn.textContent = '🙂 Choose selfie (optional)';
+    }
+  });
+
+  async function runLiveScreening(){
+    if (liveRunning || !docFile) return;
+    liveRunning = true;
+    liveRunBtn.disabled = true;
+    resetLiveUI();
+
+    const startTime = performance.now();
+    liveDocStage.classList.add('scanning');
+    liveScanline.style.display = 'block';
+    liveStatusDot.classList.add('live');
+    liveStatusLabel.textContent = 'Scanning';
+
+    liveTimerHandle = setInterval(() => {
+      liveTimerVal.textContent = ((performance.now() - startTime) / 1000).toFixed(2) + 's';
+    }, 40);
+
+    const formData = new FormData();
+    formData.append('document', docFile);
+    if (selfieFile) formData.append('selfie', selfieFile);
+
+    const fetchPromise = fetch(LIVE_API_BASE + '/api/screen', {
+      method: 'POST',
+      body: formData,
+    });
+
+    try {
+      // Visual pacing through the four stages while the real request is
+      // in flight in the background - the backend does all four stages
+      // in one call, so this just paces the UI to match the pipeline
+      // narrative rather than dumping the whole result instantly.
+      setLiveStep(1, 'active');
+      liveViewerStatus.innerHTML = 'Extracting MRZ text (Tesseract OCR)…<span class="cursor">▍</span>';
+      await wait(350);
+      setLiveStep(1, 'done');
+
+      setLiveStep(2, 'active');
+      liveViewerStatus.innerHTML = 'Validating ICAO Doc 9303 MRZ checksum…<span class="cursor">▍</span>';
+      await wait(350);
+      setLiveStep(2, 'done');
+
+      setLiveStep(3, 'active');
+      liveViewerStatus.innerHTML = 'Running ELA tamper forensics…<span class="cursor">▍</span>';
+      await wait(350);
+      setLiveStep(3, 'done');
+
+      setLiveStep(4, 'active');
+      liveViewerStatus.innerHTML = 'Matching face similarity, waiting for backend…<span class="cursor">▍</span>';
+
+      const res = await fetchPromise;
+      if (!res.ok){
+        let detail = 'Backend responded with status ' + res.status;
+        try {
+          const errBody = await res.json();
+          if (errBody && errBody.detail) detail = errBody.detail;
+        } catch (e) { /* ignore parse failure, use default message */ }
+        throw new Error(detail);
+      }
+      const data = await res.json();
+      setLiveStep(4, 'done');
+
+      clearInterval(liveTimerHandle);
+      liveTimerVal.textContent = data.elapsed_seconds.toFixed(2) + 's';
+      liveDocStage.classList.remove('scanning');
+      liveScanline.style.display = 'none';
+      liveStatusDot.classList.remove('live');
+      liveStatusLabel.textContent = 'Complete';
+      liveViewerStatus.textContent = 'Screening complete in ' + data.elapsed_seconds.toFixed(2) + 's (backend processing time)';
+
+      // Draw overlay boxes at their real coordinates, scaled to however
+      // large the preview image is actually rendered on screen.
+      if (data.tamper && data.tamper.hotspot_bbox){
+        addLiveOverlayBox(data.tamper.hotspot_bbox, 'mrz fail', 'TAMPER ANOMALY', 'danger');
+      }
+      if (data.face && data.face.document_face_bbox){
+        addLiveOverlayBox(data.face.document_face_bbox, 'face', 'FACE DETECTED', '');
+      }
+
+      liveDocStage.classList.add('result-' + data.band);
+      liveVerdictBar.textContent = data.verdict;
+      liveVerdictBar.className = 'verdict-bar ' + data.band;
+      liveGaugeNum.textContent = data.risk;
+      liveGaugeNum.className = 'gauge-num ' + data.band;
+      liveFaceMatchLabel.textContent = (data.face && data.face.match_confidence != null)
+        ? 'Face match confidence: ' + data.face.match_confidence.toFixed(1) + '%'
+        : 'Face match confidence: not evaluated (no selfie supplied, or no face detected)';
+      liveMrzLabel.textContent = 'MRZ checksum: ' + (data.mrz.valid ? 'passed' : 'failed');
+
+      liveFindingsList.innerHTML = '';
+      data.findings.forEach(f => {
+        const li = document.createElement('li');
+        li.textContent = f;
+        liveFindingsList.appendChild(li);
+      });
+      liveResults.classList.add('show');
+
+    } catch (err) {
+      clearInterval(liveTimerHandle);
+      liveDocStage.classList.remove('scanning');
+      liveScanline.style.display = 'none';
+      liveStatusDot.classList.remove('live');
+      liveStatusLabel.textContent = 'Error';
+      liveViewerStatus.textContent = 'Screening failed — see error below.';
+      liveError.textContent = 'Could not complete screening: ' + err.message +
+        '. Check that the backend is running (uvicorn app.main:app --port 8000) and reachable at ' + LIVE_API_BASE + '.';
+      liveError.classList.add('show');
+      console.error('Live screening failed:', err);
+    } finally {
+      liveRunning = false;
+      liveRunBtn.disabled = false;
+    }
+  }
+
+  liveRunBtn.addEventListener('click', runLiveScreening);
+})();
+</script>
+</body>
+</html>

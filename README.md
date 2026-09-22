@@ -52,6 +52,7 @@ brew install tesseract
 
 ```bash
 uvicorn app.main:app --reload --port 8000
+
 ```
 
 Then open **http://localhost:8000/docs** for interactive Swagger docs, or
